@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signara - AI Sign Language Interpreter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    
+    .hand-render {
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white min-h-screen">
+  <!-- Header -->
+  <header class="bg-black/30 backdrop-blur-md border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-4xl">🤟</span>
+        <div>
+          <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            Signara
+          </h1>
+          <p class="text-xs text-gray-400">AI-Powered Bi-Directional Sign Language Interpreter</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <div id="status-dot" class="w-2 h-2 rounded-full bg-red-500"></div>
+          <span id="status-text" class="text-sm text-gray-400">Disconnected</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto p-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-100px)]">
+      
+      <!-- Left Panel - Webcam -->
+      <div class="lg:col-span-1 flex flex-col gap-4">
+        <div class="bg-black/30 rounded-xl p-4 border border-white/10">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">📹 Sign Detection</h2>
+            <button
+              id="stream-btn"
+              class="px-4 py-2 rounded-lg font-medium transition-all bg-blue-500 hover:bg-blue-600"
+            >
+              Start
+            </button>
+          </div>
+          
+          <div class="aspect-video bg-black rounded-lg overflow-hidden relative">
+            <video
+              id="webcam"
+              autoplay
+              playsinline
+              muted
+              class="w-full h-full object-cover"
+            ></video>
+            <canvas id="canvas" class="hidden"></canvas>
+          </div>
+          
+          <div id="prediction" class="mt-3 p-3 bg-blue-500/20 rounded-lg border border-blue-500/30 hidden">
+            <div class="flex items-center justify-between">
+              <span id="sign-text" class="text-2xl font-bold">--</span>
+              <span id="confidence-text" class="text-sm text-gray-400">0%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Panel - Chat -->
+      <div class="lg:col-span-1 flex flex-col">
+        <div class="bg-black/30 rounded-xl p-4 border border-white/10 flex-1 flex flex-col">
+          <h2 class="text-lg font-semibold mb-3">💬 Chat</h2>
+          
+          <div id="messages" class="flex-1 overflow-y-auto space-y-3 mb-3 min-h-[200px]">
+            <div class="text-center text-gray-500 py-8">
+              <p>Type a message to see the sign!</p>
+              <p class="text-sm">Try: "hello", "thank you", "yes", "no"</p>
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <input
+              id="chat-input"
+              type="text"
+              placeholder="Type message..."
+              class="flex-1 px-4 py-2 bg-white/10 rounded-lg border border-white/20 focus:border-blue-500 focus:outline-none"
+            />
+            <button
+              id="send-btn"
+              class="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel - Avatar -->
+      <div class="lg:col-span-1">
+        <div class="bg-black/30 rounded-xl p-4 border border-white/10 h-full">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">🤖 Avatar</h2>
+            <span id="avatar-sign-label" class="text-sm text-gray-400">--</span>
+          </div>
+          
+          <div id="avatar-container" class="h-[calc(100%-60px)] bg-gray-900 rounded-lg flex items-center justify-center">
+            <svg id="avatar-svg" viewBox="0 0 300 350" class="w-full h-full">
+              <!-- Background -->
+              <rect width="300" height="350" fill="#111827" rx="15"/>
+              
+              <!-- Person silhouette -->
+              <g id="person-group">
+                <!-- Head -->
+                <circle cx="150" cy="60" r="35" fill="#FDB"/>
+                <circle cx="140" cy="55" r="3" fill="#333"/>
+                <circle cx="160" cy="55" r="3" fill="#333"/>
+                <path d="M 140 75 Q 150 82 160 75" stroke="#333" stroke-width="2" fill="none"/>
+                
+                <!-- Body -->
+                <ellipse cx="150" cy="140" rx="40" ry="50" fill="#4F46E5"/>
+                
+                <!-- Shoulders -->
+                <ellipse cx="115" cy="115" rx="20" ry="12" fill="#4F46E5"/>
+                <ellipse cx="185" cy="115" rx="20" ry="12" fill="#4F46E5"/>
+                
+                <!-- Left Arm -->
+                <path id="left-arm" d="M 115 115 Q 90 150 80 180" stroke="#FDB" stroke-width="16" fill="none" stroke-linecap="round"/>
+                
+                <!-- Right Arm -->
+                <path id="right-arm" d="M 185 115 Q 210 150 220 180" stroke="#FDB" stroke-width="16" fill="none" stroke-linecap="round"/>
+              </g>
+              
+              <!-- Hand containers -->
+              <g id="left-hand-container" transform="translate(80, 180)"></g>
+              <g id="right-hand-container" transform="translate(220, 180)"></g>
+              
+              <!-- Sign display -->
+              <text id="sign-text-svg" x="150" y="320" text-anchor="middle" font-size="28" font-weight="bold" fill="#60A5FA">--</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ============================================
+    // ACCURATE ASL ALPHABET HAND SHAPES
+    // ============================================
+    // Each letter is defined with proper ASL handshape
+    // View: From signer's perspective (looking at own hand)
+    
+    const aslAlphabet = {
+      'A': { type: 'fist', palm: 'right', fingers: 'closed', thumb: 'side' },
+      'B': { type: 'flat', palm: 'forward', fingers: 'straight', thumb: 'folded' },
+      'C': { type: 'curve', palm: 'side', fingers: 'curved', thumb: 'extended' },
+      'D': { type: 'indexup', palm: 'forward', fingers: 'index', thumb: 'bent' },
+      'E': { type: 'bent', palm: 'forward', fingers: 'bent', thumb: 'folded' },
+      'F': { type: 'ok', palm: 'forward', fingers: 'spread', thumb: 'touch' },
+      'G': { type: 'point', palm: 'side', fingers: 'index', thumb: 'extended' },
+      'H': { type: 'double', palm: 'side', fingers: 'two', thumb: 'extended' },
+      'I': { type: 'pinky', palm: 'side', fingers: 'pinky', thumb: 'folded' },
+      'J': { type: 'j', palm: 'side', fingers: 'pinky', thumb: 'folded', motion: true },
+      'K': { type: 'k', palm: 'forward', fingers: 'two', thumb: 'extended' },
+      'L': { type: 'l', palm: 'side', fingers: 'l', thumb: 'extended' },
+      'M': { type: 'm', palm: 'forward', fingers: 'three', thumb: 'cover' },
+      'N': { type: 'n', palm: 'forward', fingers: 'two', thumb: 'cover' },
+      'O': { type: 'o', palm: 'forward', fingers: 'oval', thumb: 'touch' },
+      'P': { type: 'p', palm: 'forward', fingers: 'two', thumb: 'extended' },
+      'Q': { type: 'q', palm: 'side', fingers: 'two', thumb: 'extended' },
+      'R': { type: 'r', palm: 'forward', fingers: 'cross', thumb: 'folded' },
+      'S': { type: 'fistthumb', palm: 'side', fingers: 'closed', thumb: 'front' },
+      'T': { type: 't', palm: 'side', fingers: 'closed', thumb: 'up' },
+      'U': { type: 'u', palm: 'forward', fingers: 'two', thumb: 'folded' },
+      'V': { type: 'v', palm: 'forward', fingers: 'peace', thumb: 'folded' },
+      'W': { type: 'w', palm: 'forward', fingers: 'three', thumb: 'folded' },
+      'X': { type: 'x', palm: 'forward', fingers: 'bent', thumb: 'folded' },
+      'Y': { type: 'y', palm: 'side', fingers: 'y', thumb: 'extended' },
+      'Z': { type: 'z', palm: 'side', fingers: 'index', thumb: 'extended', motion: true },
+      
+      // Common words
+      'HELLO': { type: 'wave', palm: 'forward' },
+      'THANK': { type: 'thank', palm: 'forward' },
+      'YOU': { type: 'point', palm: 'side' },
+      'YES': { type: 'fist', palm: 'side', direction: 'forward' },
+      'NO': { type: 'fist', palm: 'side', direction: 'side' },
+      'PLEASE': { type: 'flat', palm: 'forward', circles: true },
+      'SORRY': { type: 'fist', palm: 'chest' },
+      'GOOD': { type: 'thumbs', palm: 'up' },
+      'BAD': { type: 'down', palm: 'down' },
+      'HELP': { type: 'flat', palm: 'forward' },
+    };
+
+    // SVG path generators for different hand shapes
+    function createHandPath(handType, isLeft = false) {
+      const flip = isLeft ? 'scale(-1, 1)' : '';
+      const basePath = isLeft ? -30 : 0;
+      
+      const shapes = {
+        'fist': {
+          palm: `<ellipse cx="${basePath}" cy="0" rx="22" ry="24" fill="#FDB" stroke="#E8A87C" stroke-width="2"/>`,
+          fingers: `<path d="
+            M ${basePath-18} -15 L ${basePath-18} 5
+            M ${basePath-6} -18 L ${basePath-6} 5
+            M ${basePath+6} -18 L ${basePath+6} 5  
+            M ${basePath+18} -15 L ${basePath+18} 5
+          " stroke="#FDB" stroke-width="8" stroke-linecap="round"/>`,
+          thumb: `<path d="M ${basePath-22} 5 Q ${basePath-30} 15 ${basePath-25} 20" stroke="#FDB" stroke-width="8" stroke-linecap="round"/>`
+        },
+        
+        'flat': {
+          palm: `<ellipse cx="${basePath}" cy="0" rx="20" ry="22" fill="#FDB" stroke="#E8A87C" stroke-width="2"/>`,
+          fingers: `<path d="
+            M ${basePath-16} -15 L ${basePath-16} -45
+            M ${basePath-5} -18 L ${basePath-5} -50
+            M ${basePath+6} -18 L ${basePath+6} -50
+            M ${basePath+17} -15 L ${basePath+17} -45
+          " stroke="#FDB" stroke-width="7" stroke-linecap="round"/>`,
+          thumb: `<path d="M ${basePath-20} 5 Q ${basePath-28} 0 ${basePath-22} -10" stroke="#FDB" stroke-width="7" stroke-linecap="round"/>`
+        },
+        
+        'point': {
+          palm: `<ellipse cx="${basePath}" cy="0" rx="20" ry="22" fill="#FDB" stroke="#E8A87C" stroke-width="2"/>`,
+          fingers: `<path d="
+            M ${basePath-16} -15 L ${basePath-16} 5
+            M ${basePath-5} -18 L ${basePath-5} -55
+            M ${basePath+6} -15 L ${basePath+6} 5
+            M ${basePath+17} -15 L ${basePath+17} 5
+          " stroke="#FDB" stroke-width="7" stroke-linecap="round"/>`,
+          thumb: `<path d="M ${basePath-20} 5 Q ${basePath-28} 0 ${basePath-22} -8" stroke="#FDB" stroke-width="7" stroke-linecap="round"/>`
+        },
+        
+        'thumbs': {
+          palm: `<ellipse cx="${basePath}" cy="0" rx="22" ry="24" fill="#FDB" stroke="#E8A87C" stroke-width="2"/>`,
+          fingers: `<path d="
+            M ${basePath-18} -15 L ${basePath-18} 5
+            M ${basePath-6} -18 L ${basePath-6} 5
+            M ${basePath+6} -18 L ${basePath+6} 5  
+            M ${basePath+18} -15 L ${basePath+18} 5
+          " stroke="#FDB" stroke-width="8" stroke-linecap="round"/>`,
+          thumb: `<path d="M ${basePath-22} -5 Q ${basePath-25} -35 ${basePath-20} -50" stroke="#FDB" stroke-width="10" stroke-linecap="round"/>`
+        },
+        
+        'ok': {
+          palm: `<ellipse cx="${basePath}" cy="0" rx="20" ry="22" fill="#FDB" stroke="#E8A87C" stroke-width="2"/>`,
+          fingers: `<path d="
+            M ${basePath-16} -15 L ${basePath-16} 5
+            M ${basePath-5} -15 L ${basePath-5} 5
+            M ${basePath+6} -15 L ${basePath+6} 5
+            M ${basePath+17} -15 L ${basePath+17} 5
+          " stroke="#FDB" stroke-width="7" stroke-linecap="round"/>`,
+          thumb: `<ellipse cx="${basePath}" cy="5" rx="8" ry="12" fill="#FDB"/>`
+        },
+        
+        'y': {
+          palm: `<ellipse cx="${basePath}" cy="0" rx="20" ry="22" fill="#FDB" stroke="#E8A87C" stroke-width="2"/>`,
+          fingers: `<path d="
+            M ${basePath-16} -15 L ${basePath-16} 5
+            M ${basePath-5} -18 L ${basePath-5} -50
+            M ${basePath+6} -18 L ${basePath+6} -50
+            M ${basePath+17} -15 L ${basePath+17} -50
+          " stroke="#FDB" stroke-width="7" stroke-linecap="round"/>`,
+          thumb: `<path d="M ${basePath+20} 5 Q ${basePath+30} 0 ${basePath+25} -45" stroke="#FDB" stroke-width="8" stroke-linecap="round"/>`
+        },
+        
+        'u': {
+          palm: `<ellipse cx="${basePath}" cy="0" rx="20" ry="22" fill="#FDB" stroke="#E8A87C" stroke-width="2"/>`,
+          fingers: `<path d="
+            M ${basePath-10} -18 L ${basePath-10} -50
+            M ${basePath+10} -18 L ${basePath+10} -50
+          " stroke="#FDB" stroke-width="8" stroke-linecap="round"/>`,
+          thumb: `<path d="M ${basePath-18} 5 Q ${basePath-25} 0 ${basePath-20} -10" stroke="#FDB" stroke-width="7" stroke-linecap="round"/>`
+        },
+        
+        'v': {
+          palm: `<ellipse cx="${basePath}" cy="0" rx="20" ry="22" fill="#FDB" stroke="#E8A87C" stroke-width="2"/>`,
+          fingers: `<path d="
+            M ${basePath-14} -18 L ${basePath-14} -50
+            M ${basePath} -18 L ${basePath} -50
+            M ${basePath+14} -18 L ${basePath+14} -50
+          " stroke="#FDB" stroke-width="7" stroke-linecap="round"/>`,
+          thumb: `<path d="M ${basePath-18} 5 Q ${basePath-25} 0 ${basePath-20} -10" stroke="#FDB" stroke-width="7" stroke-linecap="round"/>`
+        },
+        
+        'l': {
+          palm: `<ellipse cx="${basePath}" cy="0" rx="20" ry="22" fill="#FDB" stroke="#E8A87C" stroke-width="2"/>`,
+          fingers: `<path d="
+            M ${basePath-10} -18 L ${basePath-10} -50
+            M ${basePath+10} 10 L ${basePath+40} 10
+          " stroke="#FDB" stroke-width="8" stroke-linecap="round"/>`,
+          thumb: `<path d="M ${basePath+22} 0 Q ${basePath+30} -10 ${basePath+25} -20" stroke="#FDB" stroke-width="8" stroke-linecap="round"/>`
+        },
+        
+        'default': {
+          palm: `<ellipse cx="${basePath}" cy="0" rx="20" ry="22" fill="#FDB" stroke="#E8A87C" stroke-width="2"/>`,
+          fingers: `<path d="
+            M ${basePath-16} -15 L ${basePath-16} -40
+            M ${basePath-5} -18 L ${basePath-5} -45
+            M ${basePath+6} -18 L ${basePath+6} -45
+            M ${basePath+17} -15 L ${basePath+17} -40
+          " stroke="#FDB" stroke-width="7" stroke-linecap="round"/>`,
+          thumb: `<path d="M ${basePath-20} 5 Q ${basePath-28} 0 ${basePath-22} -10" stroke="#FDB" stroke-width="7" stroke-linecap="round"/>`
+        }
+      };
+      
+      return shapes[handType] || shapes['default'];
+    }
+
+    // Get hand config for a sign
+    function getHandConfig(sign) {
+      const upperSign = sign.toUpperCase();
+      
+      // Check if it's a single letter
+      if (upperSign.length === 1 && upperSign >= 'A' && upperSign <= 'Z') {
+        const letterConfig = aslAlphabet[upperSign];
+        if (letterConfig) {
+          return {
+            leftHand: createHandPath(letterConfig.type, true),
+            rightHand: createHandPath(letterConfig.type, false)
+          };
+        }
+      }
+      
+      // Check for word
+      const wordConfig = aslAlphabet[upperSign];
+      if (wordConfig) {
+        return {
+          leftHand: createHandPath(wordConfig.type, true),
+          rightHand: createHandPath(wordConfig.type, false)
+        };
+      }
+      
+      // Default
+      return {
+        leftHand: createHandPath('default', true),
+        rightHand: createHandPath('default', false)
+      };
+    }
+
+    // State
+    let ws = null;
+    let isStreaming = false;
+    let streamInterval = null;
+    let currentSign = 'HELLO';
+    let currentGlosses = [];
+    let signIndex = 0;
+    let signTimeoutId = null;
+    let time = 0;
+
+    // DOM Elements
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const streamBtn = document.getElementById('stream-btn');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const predictionDiv = document.getElementById('prediction');
+    const signText = document.getElementById('sign-text');
+    const confidenceText = document.getElementById('confidence-text');
+    const messagesDiv = document.getElementById('messages');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const avatarSignLabel = document.getElementById('avatar-sign-label');
+    const signTextSvg = document.getElementById('sign-text-svg');
+    const leftHandContainer = document.getElementById('left-hand-container');
+    const rightHandContainer = document.getElementById('right-hand-container');
+
+    // Initialize camera
+    async function initCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480, facingMode: 'user' }
+        });
+        video.srcObject = stream;
+        canvas.width = 640;
+        canvas.height = 480;
+      } catch (err) {
+        console.error('Camera error:', err);
+      }
+    }
+
+    // Update avatar
+    function updateAvatar(sign) {
+      const config = getHandConfig(sign);
+      
+      // Update text
+      signTextSvg.textContent = sign;
+      avatarSignLabel.textContent = sign;
+      
+      // Animate breathing
+      const breathe = Math.sin(time * 2) * 2;
+      
+      // Update hands with animation
+      const leftBreathe = isLeftHandAnimating(sign) ? breathe : 0;
+      const rightBreathe = isRightHandAnimating(sign) ? breathe : 0;
+      
+      // Set hand SVG content
+      leftHandContainer.innerHTML = config.leftHand.palm + config.leftHand.fingers + config.leftHand.thumb;
+      leftHandContainer.setAttribute('transform', `translate(80, ${180 + leftBreathe})`);
+      
+      rightHandContainer.innerHTML = config.rightHand.palm + config.rightHand.fingers + config.rightHand.thumb;
+      rightHandContainer.setAttribute('transform', `translate(220, ${180 + rightBreathe})`);
+    }
+
+    function isLeftHandAnimating(sign) {
+      return ['HELLO', 'THANK', 'PLEASE'].includes(sign.toUpperCase());
+    }
+
+    function isRightHandAnimating(sign) {
+      return ['HELLO', 'THANK', 'PLEASE'].includes(sign.toUpperCase());
+    }
+
+    // Animation loop
+    function animate() {
+      time = Date.now() / 1000;
+      updateAvatar(currentSign);
+      requestAnimationFrame(animate);
+    }
+
+    // Initialize avatar
+    function initAvatar() {
+      currentSign = 'HELLO';
+      animate();
+    }
+
+    // WebSocket connection
+    function connectWebSocket() {
+      ws = new WebSocket('ws://localhost:8001/ws/stream/demo-session');
+      
+      ws.onopen = () => {
+        statusDot.classList.remove('bg-red-500');
+        statusDot.classList.add('bg-green-500');
+        statusText.textContent = 'Connected';
+      };
+      
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'prediction') {
+            signText.textContent = data.data.gloss;
+            confidenceText.textContent = Math.round(data.data.confidence * 100) + '%';
+            predictionDiv.classList.remove('hidden');
+            // We no longer update `currentSign` here so the Avatar isn't ruined by the webcam stream
+          }
+        } catch (err) {
+          console.error('Error:', err);
+        }
+      };
+      
+      ws.onclose = () => {
+        statusDot.classList.remove('bg-green-500');
+        statusDot.classList.add('bg-red-500');
+        statusText.textContent = 'Disconnected';
+        isStreaming = false;
+        streamBtn.textContent = 'Start';
+        streamBtn.classList.remove('bg-red-500');
+        streamBtn.classList.add('bg-blue-500');
+      };
+    }
+
+    // Start streaming
+    function startStreaming() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        connectWebSocket();
+      }
+      
+      setTimeout(() => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          isStreaming = true;
+          streamBtn.textContent = 'Stop';
+          streamBtn.classList.remove('bg-blue-500');
+          streamBtn.classList.add('bg-red-500');
+          
+          streamInterval = setInterval(() => {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              ws.send(JSON.stringify({ type: 'frame', keypoints: generateDemoKeypoints() }));
+            }
+          }, 500);
+        }
+      }, 1000);
+    }
+
+    // Stop streaming
+    function stopStreaming() {
+      isStreaming = false;
+      streamBtn.textContent = 'Start';
+      streamBtn.classList.remove('bg-red-500');
+      streamBtn.classList.add('bg-blue-500');
+      if (streamInterval) clearInterval(streamInterval);
+      if (ws) ws.send(JSON.stringify({ type: 'stop' }));
+    }
+
+    function generateDemoKeypoints() {
+      const keypoints = [];
+      for (let i = 0; i < 55 * 2; i++) keypoints.push(Math.random());
+      return keypoints;
+    }
+
+    // Send chat message
+    async function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      
+      const userMsg = document.createElement('div');
+      userMsg.className = 'p-3 rounded-lg bg-blue-500/20 ml-8';
+      userMsg.innerHTML = `<p class="text-sm">${text}</p>`;
+      messagesDiv.appendChild(userMsg);
+      
+      chatInput.value = '';
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      
+      try {
+        const response = await fetch('http://localhost:8001/convert-text-to-gloss', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        
+        const data = await response.json();
+        
+        if (data.glosses && data.glosses.length > 0) {
+          if (signTimeoutId) { clearTimeout(signTimeoutId); signTimeoutId = null; }
+          
+          currentGlosses = data.glosses;
+          signIndex = 0;
+          showNextSign();
+          
+          const assistantMsg = document.createElement('div');
+          assistantMsg.className = 'p-3 rounded-lg bg-purple-500/20 mr-8';
+          assistantMsg.innerHTML = `<p class="text-sm">Showing: ${data.glosses.join(' → ')}</p>`;
+          messagesDiv.appendChild(assistantMsg);
+        }
+      } catch (err) {
+        console.error('Error:', err);
+      }
+      
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function showNextSign() {
+      if (signTimeoutId) { clearTimeout(signTimeoutId); signTimeoutId = null; }
+      
+      if (signIndex >= currentGlosses.length) {
+        signIndex = 0;
+        currentSign = currentGlosses[currentGlosses.length - 1] || 'HELLO';
+        return;
+      }
+      
+      if (currentGlosses[signIndex]) {
+        currentSign = currentGlosses[signIndex];
+      }
+      
+      signIndex++;
+      
+      if (signIndex < currentGlosses.length) {
+        signTimeoutId = setTimeout(showNextSign, 2000);
+      } else {
+        signTimeoutId = setTimeout(() => {
+          signIndex = 0;
+          currentSign = 'HELLO';
+        }, 3000);
+      }
+    }
+
+    // Event listeners
+    streamBtn.addEventListener('click', () => {
+      if (isStreaming) stopStreaming();
+      else startStreaming();
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+    // Initialize
+    window.addEventListener('load', () => {
+      initCamera();
+      initAvatar();
+    });
+  </script>
+</body>
+</html>
