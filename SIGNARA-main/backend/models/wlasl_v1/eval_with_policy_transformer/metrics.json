@@ -1,0 +1,14 @@
+{
+  "num_samples": 36,
+  "splits": [
+    "test",
+    "val"
+  ],
+  "model_type": "pose_transformer",
+  "accuracy_top1": 0.6388888888888888,
+  "accuracy_top3": 0.9166666666666666,
+  "accuracy_top5": 0.9722222222222222,
+  "macro_f1": 0.6346153846153846,
+  "weighted_f1": 0.724537037037037,
+  "unknown_rate": 0.2777777777777778
+}

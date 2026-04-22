@@ -1,0 +1,12 @@
+hello
+yes
+no
+thank you
+you
+please
+sorry
+help
+good
+bad
+love
+stop

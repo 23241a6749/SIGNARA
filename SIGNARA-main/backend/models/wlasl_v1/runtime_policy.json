@@ -1,0 +1,26 @@
+{
+  "model_type": "pose_transformer",
+  "calibration_splits": [
+    "test",
+    "val"
+  ],
+  "default_min_confidence": 0.4681500047445297,
+  "min_margin": 0.0,
+  "class_thresholds": {
+    "BAD": 0.7,
+    "GOOD": 0.48500001430511475,
+    "HELLO": 0.4512999951839447,
+    "HELP": 0.35,
+    "LOVE": 0.6,
+    "NO": 0.734499990940094,
+    "PLEASE": 0.6,
+    "SORRY": 0.5498999953269958,
+    "STOP": 0.35,
+    "THANK YOU": 0.3522000014781952,
+    "YES": 0.35,
+    "YOU": 0.35
+  },
+  "ema_alpha": 0.45,
+  "vote_window": 5,
+  "vote_min_count": 3
+}

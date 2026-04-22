@@ -18,14 +18,23 @@ An AI-powered sign language interpreter designed for inclusive education. Signar
 ### 1. Start Backend
 
 ```bash
-cd signara/backend
-source venv/bin/activate
-python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8001
+cd SIGNARA-main/backend
+python3 -m virtualenv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 ```
 
 ### 2. Open Frontend
 
-Open `signara/index.html` in a web browser (Chrome recommended).
+```bash
+cd SIGNARA-main/frontend
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+Then open `http://localhost:3000` in Chrome.
 
 ### 3. Usage
 
@@ -39,6 +48,7 @@ Open `signara/index.html` in a web browser (Chrome recommended).
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Server health check |
+| `/predict` | POST | Convert text to sign sequence |
 | `/predict-keypoints` | POST | Predict sign from keypoints |
 | `/convert-text-to-gloss` | POST | Convert text to gloss sequence |
 | `/ws/stream/{session_id}` | WebSocket | Real-time sign detection |
@@ -82,6 +92,22 @@ Open `signara/index.html` in a web browser (Chrome recommended).
 - MediaPipe requires GPU libraries (libGLES) - using fallback detector
 - Demo model trained with random data (needs real training data)
 - For production: train model with actual ASL sign data
+
+## WLASL Sign Detection (No Personal Recording)
+
+The repository now includes a WLASL-only training pipeline under `backend/training/`.
+
+1. Build a filtered manifest from WLASL metadata
+2. Extract MediaPipe hand landmark sequences from selected words
+3. Train a low-latency sequence classifier and save artifacts to `backend/models/wlasl_v1/`
+
+Runtime behavior:
+
+- If `backend/models/wlasl_v1/model.joblib` exists, `/predict-keypoints` and `/ws/stream/{session_id}` use the sequence model with temporal smoothing.
+- If `backend/models/wlasl_v1/transformer_model.pt` exists, runtime prefers this transformer model.
+- If `backend/models/wlasl_v1/runtime_policy.json` exists, runtime loads per-class confidence thresholds and rejection margin automatically.
+- The runtime applies confidence and margin rejection and returns `UNKNOWN` when uncertain.
+- If no artifact exists, backend falls back to the legacy keypoint model.
 
 ## License
 

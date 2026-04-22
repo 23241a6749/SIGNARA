@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+*.log
+.venv/
+backend/.venv/
+frontend/.next/
+frontend/node_modules/

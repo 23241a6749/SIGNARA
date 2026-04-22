@@ -1,0 +1,20 @@
+{
+  "sequence_length": 32,
+  "num_samples": 97,
+  "num_classes": 12,
+  "feature_size": 126,
+  "labels": [
+    "BAD",
+    "GOOD",
+    "HELLO",
+    "HELP",
+    "LOVE",
+    "NO",
+    "PLEASE",
+    "SORRY",
+    "STOP",
+    "THANK YOU",
+    "YES",
+    "YOU"
+  ]
+}

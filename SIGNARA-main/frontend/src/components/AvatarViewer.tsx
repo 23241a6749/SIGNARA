@@ -10,6 +10,7 @@ const gestureMap: Record<string, string> = {
   YOU: "/gestures/you.png",
   THANK: "/gestures/thankyou.png",
   THANKYOU: "/gestures/thankyou.png",
+  ILOVEYOU: "/gestures/iloveyou.png",
 };
 
 interface GestureDisplayProps {
@@ -39,7 +40,7 @@ export default function AvatarViewer({ action = "" }: GestureDisplayProps) {
         />
       ) : action ? (
         <div className="flex flex-col items-center justify-center opacity-40">
-           <p className="text-gray-400 font-semibold text-2xl tracking-widest uppercase">No gesture for "{action}"</p>
+           <p className="text-gray-400 font-semibold text-2xl tracking-widest uppercase">No gesture for &quot;{action}&quot;</p>
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center opacity-40">

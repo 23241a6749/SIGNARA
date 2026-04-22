@@ -1,0 +1,14 @@
+{
+  "num_samples": 36,
+  "splits": [
+    "test",
+    "val"
+  ],
+  "model_type": "sklearn_trees",
+  "accuracy_top1": 0.5,
+  "accuracy_top3": 0.8333333333333334,
+  "accuracy_top5": 0.9166666666666666,
+  "macro_f1": 0.5230769230769231,
+  "weighted_f1": 0.5805555555555556,
+  "unknown_rate": 0.4444444444444444
+}

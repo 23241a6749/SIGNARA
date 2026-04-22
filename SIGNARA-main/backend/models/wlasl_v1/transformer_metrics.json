@@ -1,0 +1,7 @@
+{
+  "num_train": 61,
+  "num_val": 36,
+  "best_val_top1": 0.7777777777777778,
+  "best_val_top3": 0.9444444444444444,
+  "device": "cpu"
+}
